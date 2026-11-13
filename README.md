@@ -1,11 +1,16 @@
 # Backend .NET 10 – creación de tickets Jira
 
+Puerta de entrada a Jira Software para el agente de **Pase** (hackatón IntelliHack). El backend del agente
+(`jurektumba/hackatonbcpnov26backend`, `tools/jira`) la llama por HTTP.
+
 Variables de entorno (token en https://id.atlassian.com/manage-profile/security/api-tokens):
 
 ```
-Jira__Email=tu@correo.com
+Jira__Email=correo-de-la-cuenta-del-token
 Jira__ApiToken=xxxx
-# opcionales: Jira__BaseUrl, Jira__ProjectKey (KAN), Jira__IssueType (Task)
+Security__ApiKey=clave-compartida   # recomendado: exige el header X-Api-Key en /api/* (salvo /api/health)
+# opcionales: Jira__BaseUrl, Jira__ProjectKey (GRUP), Jira__IssueType (Tarea),
+#             Jira__SubtaskIssueType (Subtask), Jira__SprintFieldId (customfield_10020)
 ```
 
 Ejecutar: `dotnet run --urls http://localhost:8080`
@@ -26,7 +31,7 @@ El paquete no contiene credenciales. El script pide el token sin mostrarlo; tamb
 
 Suscripcion predeterminada: **Suscripcion Dev**, `d9cbd201-81d6-4884-840f-3f29b7fd7ad7`. El script la selecciona explicitamente y muestra el nombre y el ID antes de crear recursos. Se puede cambiar con `SUBSCRIPTION_ID`.
 
-Variables opcionales: `APP_NAME`, `PLAN_NAME`, `LOCATION`, `RESOURCE_GROUP`, `CORS_ORIGIN` (URL del frontend), `JIRA_EMAIL`. Los nombres predeterminados son estables para reutilizar recursos en posteriores despliegues. Un grupo puede contener recursos de distintas regiones.
+Variables opcionales: `APP_NAME`, `PLAN_NAME`, `LOCATION`, `RESOURCE_GROUP`, `CORS_ORIGIN` (URL del frontend), `JIRA_EMAIL` (si falta, el script lo pide), `SECURITY_API_KEY` (si falta, el script genera una y la muestra al final). Los nombres predeterminados son estables para reutilizar recursos en posteriores despliegues. Un grupo puede contener recursos de distintas regiones.
 
 ### Alternativa B1 de pago autorizada
 
@@ -40,17 +45,48 @@ Si Azure rechaza F1 por cuota o politica, el script termina con el error: no cam
 
 Para regenerar `app.zip` tras cambios, ejecuta desde esta carpeta `dotnet publish -c Release -o bin/azure-publish --self-contained false` y comprime el **contenido** de esa salida (sin carpeta contenedora).
 
-La API sigue sin autenticacion: no compartas su URL publicamente; CORS no impide llamadas externas para crear tickets.
+La API se protege con `X-Api-Key` (`Security__ApiKey`). Sin esa variable acepta llamadas sin autenticacion: CORS no impide llamadas externas para crear tickets.
 
-## Contrato (idéntico al backend Java)
+## Endpoints
+
+Todas las rutas salvo `/api/health` exigen `X-Api-Key` si `Security__ApiKey` está definido. Errores de Jira: `502`
+con `jiraStatus` y `detail`.
+
+| Método | Ruta | Para qué |
+|---|---|---|
+| `GET` | `/api/health` | Verificar que la API está arriba |
+| `GET` | `/api/projects` | Proyectos donde la cuenta puede crear issues → `[{ "key", "name" }]` |
+| `GET` | `/api/projects/{key}/active-sprint` | Sprint activo del proyecto → `{ "id", "name", "state" }` o `null` (backlog) |
+| `POST` | `/api/tickets` | Crea un issue (Historia, Tarea, Subtask…) |
+| `POST` | `/api/tickets/{parentKey}/subtasks` | Crea varias subtareas bajo un issue, en orden |
 
 `POST /api/tickets`
 
 ```json
-{ "summary": "No puedo acceder al portal", "description": "Detalle...", "issueType": "Historia", "priority": "High", "labels": ["chatbot"] }
+{
+  "summary": "[REQ-002] Resolver Vulnerabilidades de Checkmark de EPSM",
+  "description": "Texto; cada línea es un párrafo",
+  "issueType": "Historia",
+  "projectKey": "GRUP",
+  "sprintId": 1,
+  "parentKey": null,
+  "priority": "High",
+  "labels": ["pase"]
+}
 ```
 
-`issueType` es opcional (por defecto `Jira__IssueType`, "Tarea"). En este proyecto los tipos válidos son `Tarea`, `Historia`, `Epic`, `Subtask`.
+Solo `summary` y `description` son obligatorios. `projectKey` por defecto `Jira__ProjectKey`; sin `sprintId` el issue
+queda en el backlog. Respuesta `201`: `{ "key": "GRUP-2", "url": "https://intellihack.atlassian.net/browse/GRUP-2" }`.
 
-`201`: `{ "key": "KAN-12", "url": "https://intellihack.atlassian.net/browse/KAN-12" }`
-Error de Jira: `502` con `jiraStatus` y `detail`. `GET /api/health` para verificar.
+`POST /api/tickets/GRUP-2/subtasks`
+
+```json
+{ "subtasks": [ { "summary": "T-01 · …", "description": "Cubre AC-01" } ], "labels": ["pase"] }
+```
+
+Respuesta `200`: `[{ "key": "GRUP-3", "url": "…" }, …]` en el mismo orden.
+
+### Proyecto GRUP (Grupo009)
+
+Team-managed. Tipos de issue: `Historia`, `Tarea`, `Subtask` (requiere `parentKey`), `Epic`, `Error`. Tablero 2 con
+sprints habilitados; el campo de sprint es `customfield_10020`. Un issue solo entra a un sprint activo o futuro.

@@ -9,9 +9,9 @@ SKU="${SKU:-F1}"
 [[ "$SKU" == "F1" || "$SKU" == "B1" ]] || { echo "ERROR: SKU debe ser F1 o B1." >&2; exit 1; }
 PLAN_NAME="${PLAN_NAME:-plan-jira-${SKU,,}-${LOCATION}}"
 APP_NAME="${APP_NAME:-jira-g09-${SUBSCRIPTION_ID%%-*}-${LOCATION}}"
-JIRA_EMAIL="${JIRA_EMAIL:-jurektumba@gmail.com}"
+JIRA_EMAIL="${JIRA_EMAIL:-}"
 JIRA_BASE_URL="${JIRA_BASE_URL:-https://intellihack.atlassian.net}"
-JIRA_PROJECT_KEY="${JIRA_PROJECT_KEY:-KAN}"
+JIRA_PROJECT_KEY="${JIRA_PROJECT_KEY:-GRUP}"
 JIRA_ISSUE_TYPE="${JIRA_ISSUE_TYPE:-Tarea}"
 CORS_ORIGIN="${CORS_ORIGIN:-http://localhost:5173}"
 
@@ -31,6 +31,16 @@ if [[ -z "${JIRA_API_TOKEN:-}" ]]; then
   printf '\n'
 fi
 [[ -n "$JIRA_API_TOKEN" ]] || fail "El token no puede estar vacio."
+if [[ -z "$JIRA_EMAIL" ]]; then
+  read -rp 'Correo de la cuenta de Jira duena del token: ' JIRA_EMAIL
+fi
+[[ -n "$JIRA_EMAIL" ]] || fail "El correo de Jira no puede estar vacio (JIRA_EMAIL)."
+# Clave compartida para proteger la API (header X-Api-Key). Si no se pasa, se genera una.
+API_KEY_GENERATED=false
+if [[ -z "${SECURITY_API_KEY:-}" ]]; then
+  SECURITY_API_KEY="$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')"
+  API_KEY_GENERATED=true
+fi
 
 az account show --output none || fail "Inicia sesion con az login."
 az account set --subscription "$SUBSCRIPTION_ID"
@@ -86,7 +96,8 @@ az webapp config appsettings set -g "$RESOURCE_GROUP" -n "$APP_NAME" --output no
   --settings "SCM_DO_BUILD_DURING_DEPLOYMENT=false" \
     "Jira__Email=$JIRA_EMAIL" "Jira__ApiToken=$JIRA_API_TOKEN" \
     "Jira__BaseUrl=$JIRA_BASE_URL" "Jira__ProjectKey=$JIRA_PROJECT_KEY" \
-    "Jira__IssueType=$JIRA_ISSUE_TYPE" "Cors__AllowedOrigins__0=$CORS_ORIGIN"
+    "Jira__IssueType=$JIRA_ISSUE_TYPE" "Cors__AllowedOrigins__0=$CORS_ORIGIN" \
+    "Security__ApiKey=$SECURITY_API_KEY"
 unset JIRA_API_TOKEN
 az webapp config set -g "$RESOURCE_GROUP" -n "$APP_NAME" \
   --startup-file 'dotnet JiraBackend.dll' --output none
@@ -100,7 +111,11 @@ for ((i=1; i<=24; i++)); do
   if BODY="$(curl --connect-timeout 10 --max-time 20 -fsS "$URL/api/health")"; then
     if python3 -c 'import json,sys; sys.exit(0 if json.load(sys.stdin).get("status") == "ok" else 1)' <<< "$BODY"; then
       echo "API verificada: $URL/api/health"
-      echo "Crear tickets: POST $URL/api/tickets"
+      echo "Crear tickets: POST $URL/api/tickets (header X-Api-Key)"
+      if [[ "$API_KEY_GENERATED" == "true" ]]; then
+        echo "Clave de API generada (guardala para el agente como JIRA_GATEWAY_API_KEY; no se vuelve a mostrar):"
+        echo "  $SECURITY_API_KEY"
+      fi
       exit 0
     fi
   fi

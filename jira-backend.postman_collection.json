@@ -4,47 +4,189 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8080" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "apiKey",
+      "value": ""
+    }
   ],
   "item": [
     {
       "name": "Health",
       "request": {
         "method": "GET",
-        "url": { "raw": "{{baseUrl}}/api/health", "host": ["{{baseUrl}}"], "path": ["api", "health"] }
+        "url": {
+          "raw": "{{baseUrl}}/api/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "health"
+          ]
+        },
+        "header": []
       }
     },
     {
       "name": "Crear Tarea (por defecto)",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Api-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
         "body": {
           "mode": "raw",
           "raw": "{\n  \"summary\": \"No puedo acceder al portal\",\n  \"description\": \"Línea 1\\nLínea 2\",\n  \"labels\": [\"chatbot\"]\n}"
         },
-        "url": { "raw": "{{baseUrl}}/api/tickets", "host": ["{{baseUrl}}"], "path": ["api", "tickets"] }
+        "url": {
+          "raw": "{{baseUrl}}/api/tickets",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "tickets"
+          ]
+        }
       }
     },
     {
       "name": "Crear Historia",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Api-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
         "body": {
           "mode": "raw",
           "raw": "{\n  \"summary\": \"Chatbot de EndUser: responder consultas y crear tickets Jira\",\n  \"description\": \"Como usuario final, quiero un chatbot que responda mis consultas y cree un ticket en Jira cuando no pueda resolverlas.\",\n  \"issueType\": \"Historia\",\n  \"labels\": [\"chatbot\"]\n}"
         },
-        "url": { "raw": "{{baseUrl}}/api/tickets", "host": ["{{baseUrl}}"], "path": ["api", "tickets"] }
+        "url": {
+          "raw": "{{baseUrl}}/api/tickets",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "tickets"
+          ]
+        }
       }
     },
     {
       "name": "Validación (summary vacío → 400)",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": { "mode": "raw", "raw": "{\n  \"summary\": \"\",\n  \"description\": \"x\"\n}" },
-        "url": { "raw": "{{baseUrl}}/api/tickets", "host": ["{{baseUrl}}"], "path": ["api", "tickets"] }
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Api-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"summary\": \"\",\n  \"description\": \"x\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/tickets",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "tickets"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Proyectos",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Api-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/projects"
+      }
+    },
+    {
+      "name": "Sprint activo de GRUP",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Api-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/projects/GRUP/active-sprint"
+      }
+    },
+    {
+      "name": "Crear Historia en GRUP (backlog)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Api-Key",
+            "value": "{{apiKey}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/tickets",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"summary\": \"[REQ-002] Resolver Vulnerabilidades de Checkmark de EPSM\",\n  \"description\": \"Historia creada por Pase\",\n  \"issueType\": \"Historia\",\n  \"projectKey\": \"GRUP\",\n  \"labels\": [\n    \"pase\"\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "Crear subtareas",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Api-Key",
+            "value": "{{apiKey}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/tickets/GRUP-2/subtasks",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subtasks\": [\n    {\n      \"summary\": \"T-01 · Parametrizar consultas\",\n      \"description\": \"Cubre AC-01\"\n    }\n  ],\n  \"labels\": [\n    \"pase\"\n  ]\n}"
+        }
       }
     }
   ]
