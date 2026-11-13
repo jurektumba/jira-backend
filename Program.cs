@@ -19,7 +19,7 @@ builder.Services.AddHttpClient<JiraService>((sp, client) =>
 });
 
 var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.WithOrigins(origins).AllowAnyHeader().WithMethods("GET", "POST")));
+builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.WithOrigins(origins).AllowAnyHeader().WithMethods("GET", "POST", "PATCH")));
 
 var app = builder.Build();
 
@@ -68,6 +68,40 @@ app.MapPost("/api/tickets/{parentKey}/subtasks", (string parentKey, SubtasksRequ
     var created = await jira.CreateSubtasksAsync(parentKey, req, ct);
     return Results.Ok(created);
 }));
+
+// Estado actual de un issue.
+app.MapGet("/api/tickets/{key}", (string key, JiraService jira, CancellationToken ct) =>
+    JiraCall(async () => Results.Ok(await jira.GetTicketAsync(key, ct))));
+
+// Mueve el issue a un estado por nombre (ej. "Congelamiento").
+app.MapPost("/api/tickets/{key}/transition", (string key, TransitionRequest req, JiraService jira, CancellationToken ct) => JiraCall(async () =>
+{
+    if (!IsValid(req) || string.IsNullOrWhiteSpace(req.Status))
+        return Results.BadRequest(new { error = "status es obligatorio" });
+    return Results.Ok(await jira.TransitionAsync(key, req.Status, ct));
+}));
+
+// Agrega un comentario (texto; cada línea es un párrafo).
+app.MapPost("/api/tickets/{key}/comments", (string key, CommentRequest req, JiraService jira, CancellationToken ct) => JiraCall(async () =>
+{
+    if (!IsValid(req) || string.IsNullOrWhiteSpace(req.Body))
+        return Results.BadRequest(new { error = "body es obligatorio" });
+    await jira.AddCommentAsync(key, req.Body, ct);
+    return Results.NoContent();
+}));
+
+// Enlaza el issue con otro (por defecto "Relates").
+app.MapPost("/api/tickets/{key}/links", (string key, LinkRequest req, JiraService jira, CancellationToken ct) => JiraCall(async () =>
+{
+    if (!IsValid(req) || string.IsNullOrWhiteSpace(req.TargetKey))
+        return Results.BadRequest(new { error = "targetKey es obligatorio" });
+    await jira.LinkAsync(key, req, ct);
+    return Results.NoContent();
+}));
+
+// Actualiza campos simples (hoy: dueDate, la fecha de pase del OCD; "" la borra).
+app.MapPatch("/api/tickets/{key}", (string key, UpdateTicketRequest req, JiraService jira, CancellationToken ct) =>
+    JiraCall(async () => Results.Ok(await jira.UpdateTicketAsync(key, req, ct))));
 
 // Proyectos donde la cuenta puede crear issues.
 app.MapGet("/api/projects", (JiraService jira, CancellationToken ct) =>

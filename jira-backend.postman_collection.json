@@ -188,6 +188,124 @@
           "raw": "{\n  \"subtasks\": [\n    {\n      \"summary\": \"T-01 · Parametrizar consultas\",\n      \"description\": \"Cubre AC-01\"\n    }\n  ],\n  \"labels\": [\n    \"pase\"\n  ]\n}"
         }
       }
+    },
+    {
+      "name": "Crear OCD (en Validación, enlazado a la Historia)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Api-Key",
+            "value": "{{apiKey}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/tickets",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"summary\": \"[OCD] REQ-002 — Resolver Vulnerabilidades de Checkmark de EPSM\",\n  \"description\": \"Pase a producción…\",\n  \"issueType\": \"OCD\",\n  \"projectKey\": \"OCD\",\n  \"relatesTo\": \"GRUP-2\",\n  \"initialStatus\": \"Validación\",\n  \"labels\": [\n    \"pase\"\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "Estado de un OCD",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Api-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/tickets/OCD-3"
+      }
+    },
+    {
+      "name": "Transicionar OCD",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Api-Key",
+            "value": "{{apiKey}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/tickets/OCD-3/transition",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"Congelamiento\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Comentario de checklist",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Api-Key",
+            "value": "{{apiKey}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/tickets/OCD-3/comments",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"body\": \"Pase: checklist para pasar a Congelamiento\\n✓ Evidencias OK\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Fecha de pase",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "X-Api-Key",
+            "value": "{{apiKey}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/tickets/OCD-3",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dueDate\": \"2026-11-15\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Enlazar issues",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Api-Key",
+            "value": "{{apiKey}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/tickets/OCD-3/links",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"targetKey\": \"GRUP-2\",\n  \"type\": \"Relates\"\n}"
+        }
+      }
     }
   ]
 }

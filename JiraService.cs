@@ -26,6 +26,8 @@ public partial class JiraService(HttpClient http, Microsoft.Extensions.Options.I
         // En Jira Cloud el sprint se asigna con el id numérico en el campo de sprint.
         if (req.SprintId is { } sprintId)
             fields[_opt.SprintFieldId] = sprintId;
+        if (!string.IsNullOrWhiteSpace(req.DueDate))
+            fields["duedate"] = req.DueDate;
 
         using var resp = await http.PostAsJsonAsync("/rest/api/3/issue", new { fields }, ct);
         var body = await resp.Content.ReadAsStringAsync(ct);
@@ -34,7 +36,76 @@ public partial class JiraService(HttpClient http, Microsoft.Extensions.Options.I
 
         using var doc = JsonDocument.Parse(body);
         var key = doc.RootElement.GetProperty("key").GetString()!;
-        return new TicketResponse(key, $"{_opt.BaseUrl.TrimEnd('/')}/browse/{key}");
+        if (!string.IsNullOrWhiteSpace(req.RelatesTo))
+            await LinkAsync(key, new LinkRequest(req.RelatesTo), ct);
+        if (!string.IsNullOrWhiteSpace(req.InitialStatus))
+            await TransitionAsync(key, req.InitialStatus, ct);
+        return new TicketResponse(key, BrowseUrl(key));
+    }
+
+    private string BrowseUrl(string key) => $"{_opt.BaseUrl.TrimEnd('/')}/browse/{key}";
+
+    public async Task<TicketStatusResponse> GetTicketAsync(string key, CancellationToken ct)
+    {
+        using var doc = await GetJsonAsync($"/rest/api/3/issue/{Uri.EscapeDataString(key)}?fields=summary,status,duedate", ct);
+        var f = doc.RootElement.GetProperty("fields");
+        var due = f.TryGetProperty("duedate", out var d) && d.ValueKind == JsonValueKind.String ? d.GetString() : null;
+        return new TicketStatusResponse(key, BrowseUrl(key), f.GetProperty("summary").GetString()!,
+            f.GetProperty("status").GetProperty("name").GetString()!, due);
+    }
+
+    /// <summary>Mueve el issue al estado indicado (por nombre), buscando la transición que lleva a él.</summary>
+    public async Task<TicketStatusResponse> TransitionAsync(string key, string status, CancellationToken ct)
+    {
+        var path = $"/rest/api/3/issue/{Uri.EscapeDataString(key)}/transitions";
+        using (var doc = await GetJsonAsync(path, ct))
+        {
+            var transition = doc.RootElement.GetProperty("transitions").EnumerateArray().FirstOrDefault(t =>
+                string.Equals(t.GetProperty("to").GetProperty("name").GetString(), status, StringComparison.OrdinalIgnoreCase));
+            if (transition.ValueKind != JsonValueKind.Object)
+            {
+                var available = string.Join(", ", doc.RootElement.GetProperty("transitions").EnumerateArray()
+                    .Select(t => t.GetProperty("to").GetProperty("name").GetString()));
+                throw new JiraException(409, $"No hay transición de {key} a \"{status}\". Disponibles: {available}");
+            }
+            using var resp = await http.PostAsJsonAsync(path, new { transition = new { id = transition.GetProperty("id").GetString() } }, ct);
+            if (!resp.IsSuccessStatusCode)
+                throw new JiraException((int)resp.StatusCode, await resp.Content.ReadAsStringAsync(ct));
+        }
+        return await GetTicketAsync(key, ct);
+    }
+
+    public async Task AddCommentAsync(string key, string body, CancellationToken ct)
+    {
+        using var resp = await http.PostAsJsonAsync($"/rest/api/3/issue/{Uri.EscapeDataString(key)}/comment", new { body = ToAdf(body) }, ct);
+        if (!resp.IsSuccessStatusCode)
+            throw new JiraException((int)resp.StatusCode, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    /// <summary>Enlaza dos issues (por defecto "Relates"). Funciona entre proyectos.</summary>
+    public async Task LinkAsync(string key, LinkRequest req, CancellationToken ct)
+    {
+        using var resp = await http.PostAsJsonAsync("/rest/api/3/issueLink", new
+        {
+            type = new { name = string.IsNullOrWhiteSpace(req.Type) ? "Relates" : req.Type },
+            inwardIssue = new { key },
+            outwardIssue = new { key = req.TargetKey }
+        }, ct);
+        if (!resp.IsSuccessStatusCode)
+            throw new JiraException((int)resp.StatusCode, await resp.Content.ReadAsStringAsync(ct));
+    }
+
+    public async Task<TicketStatusResponse> UpdateTicketAsync(string key, UpdateTicketRequest req, CancellationToken ct)
+    {
+        var fields = new Dictionary<string, object?>();
+        if (req.DueDate is not null) fields["duedate"] = req.DueDate == "" ? null : req.DueDate;
+        if (fields.Count > 0)
+        {
+            using var resp = await http.PutAsJsonAsync($"/rest/api/3/issue/{Uri.EscapeDataString(key)}", new { fields }, ct);
+            if (!resp.IsSuccessStatusCode)
+                throw new JiraException((int)resp.StatusCode, await resp.Content.ReadAsStringAsync(ct));
+        }
+        return await GetTicketAsync(key, ct);
     }
 
     /// <summary>Crea las subtareas en orden, bajo el issue padre. Devuelve las claves en el mismo orden.</summary>

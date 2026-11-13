@@ -59,6 +59,11 @@ con `jiraStatus` y `detail`.
 | `GET` | `/api/projects/{key}/active-sprint` | Sprint activo del proyecto → `{ "id", "name", "state" }` o `null` (backlog) |
 | `POST` | `/api/tickets` | Crea un issue (Historia, Tarea, Subtask…) |
 | `POST` | `/api/tickets/{parentKey}/subtasks` | Crea varias subtareas bajo un issue, en orden |
+| `GET` | `/api/tickets/{key}` | Estado actual → `{ "key", "url", "summary", "status", "dueDate" }` |
+| `POST` | `/api/tickets/{key}/transition` | Mueve el issue a un estado por nombre: `{ "status": "Congelamiento" }` |
+| `POST` | `/api/tickets/{key}/comments` | Agrega un comentario: `{ "body": "texto" }` (cada línea, un párrafo) |
+| `POST` | `/api/tickets/{key}/links` | Enlaza con otro issue: `{ "targetKey": "GRUP-2", "type": "Relates" }` |
+| `PATCH` | `/api/tickets/{key}` | Actualiza la fecha de vencimiento: `{ "dueDate": "2026-11-15" }` (`""` la borra) |
 
 `POST /api/tickets`
 
@@ -75,7 +80,8 @@ con `jiraStatus` y `detail`.
 }
 ```
 
-Solo `summary` y `description` son obligatorios. `projectKey` por defecto `Jira__ProjectKey`; sin `sprintId` el issue
+Además acepta `dueDate` (`yyyy-MM-dd`), `relatesTo` (crea un enlace "Relates" con ese issue) e `initialStatus`
+(mueve el issue a ese estado justo después de crearlo). Solo `summary` y `description` son obligatorios. `projectKey` por defecto `Jira__ProjectKey`; sin `sprintId` el issue
 queda en el backlog. Respuesta `201`: `{ "key": "GRUP-2", "url": "https://intellihack.atlassian.net/browse/GRUP-2" }`.
 
 `POST /api/tickets/GRUP-2/subtasks`
@@ -90,3 +96,12 @@ Respuesta `200`: `[{ "key": "GRUP-3", "url": "…" }, …]` en el mismo orden.
 
 Team-managed. Tipos de issue: `Historia`, `Tarea`, `Subtask` (requiere `parentKey`), `Epic`, `Error`. Tablero 2 con
 sprints habilitados; el campo de sprint es `customfield_10020`. Un issue solo entra a un sprint activo o futuro.
+
+### Proyecto OCD
+
+Jira Software, team-managed, tipo de issue `OCD`. Su flujo tiene los 7 estados del OCD además de los 3 por defecto
+(que siguen usando `Epic` y `Subtask`): **Validación → Congelamiento → Reversión de congelamiento → Recongelamiento →
+Calendarización → Aprobación → Producción**, con transiciones globales (el orden lo valida el checklist de Pase).
+Un OCD se crea con `projectKey: "OCD"`, `issueType: "OCD"`, `relatesTo: <Historia>` e `initialStatus: "Validación"`;
+cada transición se registra con un comentario del checklist y la fecha de pase va en `dueDate`.
+

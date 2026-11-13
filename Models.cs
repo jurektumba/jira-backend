@@ -33,7 +33,23 @@ public record TicketRequest(
     // Issue padre (obligatorio para subtareas).
     string? ParentKey = null,
     // Sprint al que se agrega el issue; si falta, queda en el backlog.
-    int? SprintId = null);
+    int? SprintId = null,
+    // Fecha de vencimiento (yyyy-MM-dd); en OCD se usa como fecha de pase.
+    string? DueDate = null,
+    // Issue con el que se crea un enlace "Relates" (ej. el OCD con su Historia).
+    string? RelatesTo = null,
+    // Estado al que se mueve el issue justo después de crearlo (ej. "Validación").
+    string? InitialStatus = null);
+
+public record TransitionRequest([property: Required] string Status);
+
+public record CommentRequest([property: Required] string Body);
+
+public record LinkRequest([property: Required] string TargetKey, string? Type = "Relates");
+
+public record UpdateTicketRequest(string? DueDate);
+
+public record TicketStatusResponse(string Key, string Url, string Summary, string Status, string? DueDate);
 
 public record SubtaskItem([property: Required, MaxLength(250)] string Summary, string? Description);
 
