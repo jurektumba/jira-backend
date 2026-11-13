@@ -99,9 +99,22 @@ sprints habilitados; el campo de sprint es `customfield_10020`. Un issue solo en
 
 ### Proyecto OCD
 
-Jira Software, team-managed, tipo de issue `OCD`. Su flujo tiene los 7 estados del OCD además de los 3 por defecto
-(que siguen usando `Epic` y `Subtask`): **Validación → Congelamiento → Reversión de congelamiento → Recongelamiento →
-Calendarización → Aprobación → Producción**, con transiciones globales (el orden lo valida el checklist de Pase).
+Jira Software, team-managed, tipo de issue `OCD`. El flujo es compartido con `Epic` y `Subtask` (en proyectos
+team-managed la API no permite un flujo propio por tipo), y tiene reglas de transición:
+
+| Desde | Puede ir a |
+|---|---|
+| Por hacer (al crear) | Validación (inicia el OCD), En curso |
+| Validación | Congelamiento |
+| Congelamiento | Reversión de congelamiento, Validación (devolver) |
+| Reversión de congelamiento | Recongelamiento, Validación (devolver) |
+| Recongelamiento | Calendarización, Validación (devolver) |
+| Calendarización | Aprobación, Validación (devolver) |
+| Aprobación | Producción, Validación (devolver) |
+| Producción | — (final) |
+| En curso / Listo | entre Por hacer, En curso y Listo (Epic y Subtask) |
+
+Un salto no permitido responde `502` con `jiraStatus: 409` y las transiciones disponibles.
 Un OCD se crea con `projectKey: "OCD"`, `issueType: "OCD"`, `relatesTo: <Historia>` e `initialStatus: "Validación"`;
 cada transición se registra con un comentario del checklist y la fecha de pase va en `dueDate`.
 
