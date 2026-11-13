@@ -1,0 +1,51 @@
+{
+  "info": {
+    "name": "Jira Backend (Hackathon)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "{{baseUrl}}/api/health", "host": ["{{baseUrl}}"], "path": ["api", "health"] }
+      }
+    },
+    {
+      "name": "Crear Tarea (por defecto)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"summary\": \"No puedo acceder al portal\",\n  \"description\": \"Línea 1\\nLínea 2\",\n  \"labels\": [\"chatbot\"]\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/tickets", "host": ["{{baseUrl}}"], "path": ["api", "tickets"] }
+      }
+    },
+    {
+      "name": "Crear Historia",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"summary\": \"Chatbot de EndUser: responder consultas y crear tickets Jira\",\n  \"description\": \"Como usuario final, quiero un chatbot que responda mis consultas y cree un ticket en Jira cuando no pueda resolverlas.\",\n  \"issueType\": \"Historia\",\n  \"labels\": [\"chatbot\"]\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/tickets", "host": ["{{baseUrl}}"], "path": ["api", "tickets"] }
+      }
+    },
+    {
+      "name": "Validación (summary vacío → 400)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"summary\": \"\",\n  \"description\": \"x\"\n}" },
+        "url": { "raw": "{{baseUrl}}/api/tickets", "host": ["{{baseUrl}}"], "path": ["api", "tickets"] }
+      }
+    }
+  ]
+}

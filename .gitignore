@@ -1,0 +1,5 @@
+bin/
+obj/
+token
+.env
+appsettings.Development.json
