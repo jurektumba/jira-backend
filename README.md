@@ -1,6 +1,6 @@
 # Backend .NET 10 – creación de tickets Jira
 
-Puerta de entrada a Jira Software para el agente de **Pase** (hackatón IntelliHack). El backend del agente
+Puerta de entrada a Jira Software para el agente de **Lanzalo**, el verdadero One Click Deploy (hackatón IntelliHack). El backend del agente
 (`jurektumba/hackatonbcpnov26backend`, `tools/jira`) la llama por HTTP.
 
 Variables de entorno (token en https://id.atlassian.com/manage-profile/security/api-tokens):
@@ -76,7 +76,7 @@ con `jiraStatus` y `detail`.
   "sprintId": 1,
   "parentKey": null,
   "priority": "High",
-  "labels": ["pase"]
+  "labels": ["lanzalo"]
 }
 ```
 
@@ -87,7 +87,7 @@ queda en el backlog. Respuesta `201`: `{ "key": "GRUP-2", "url": "https://intell
 `POST /api/tickets/GRUP-2/subtasks`
 
 ```json
-{ "subtasks": [ { "summary": "T-01 · …", "description": "Cubre AC-01" } ], "labels": ["pase"] }
+{ "subtasks": [ { "summary": "T-01 · …", "description": "Cubre AC-01" } ], "labels": ["lanzalo"] }
 ```
 
 Respuesta `200`: `[{ "key": "GRUP-3", "url": "…" }, …]` en el mismo orden.

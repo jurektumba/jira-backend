@@ -164,7 +164,7 @@
         "url": "{{baseUrl}}/api/tickets",
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"summary\": \"[REQ-002] Resolver Vulnerabilidades de Checkmark de EPSM\",\n  \"description\": \"Historia creada por Pase\",\n  \"issueType\": \"Historia\",\n  \"projectKey\": \"GRUP\",\n  \"labels\": [\n    \"pase\"\n  ]\n}"
+          "raw": "{\n  \"summary\": \"[REQ-002] Resolver Vulnerabilidades de Checkmark de EPSM\",\n  \"description\": \"Historia creada por Lanzalo\",\n  \"issueType\": \"Historia\",\n  \"projectKey\": \"GRUP\",\n  \"labels\": [\n    \"lanzalo\"\n  ]\n}"
         }
       }
     },
@@ -185,7 +185,7 @@
         "url": "{{baseUrl}}/api/tickets/GRUP-2/subtasks",
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"subtasks\": [\n    {\n      \"summary\": \"T-01 · Parametrizar consultas\",\n      \"description\": \"Cubre AC-01\"\n    }\n  ],\n  \"labels\": [\n    \"pase\"\n  ]\n}"
+          "raw": "{\n  \"subtasks\": [\n    {\n      \"summary\": \"T-01 · Parametrizar consultas\",\n      \"description\": \"Cubre AC-01\"\n    }\n  ],\n  \"labels\": [\n    \"lanzalo\"\n  ]\n}"
         }
       }
     },
@@ -206,7 +206,7 @@
         "url": "{{baseUrl}}/api/tickets",
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"summary\": \"[OCD] REQ-002 — Resolver Vulnerabilidades de Checkmark de EPSM\",\n  \"description\": \"Pase a producción…\",\n  \"issueType\": \"OCD\",\n  \"projectKey\": \"OCD\",\n  \"relatesTo\": \"GRUP-2\",\n  \"initialStatus\": \"Validación\",\n  \"labels\": [\n    \"pase\"\n  ]\n}"
+          "raw": "{\n  \"summary\": \"[OCD] REQ-002 — Resolver Vulnerabilidades de Checkmark de EPSM\",\n  \"description\": \"Pase a producción…\",\n  \"issueType\": \"OCD\",\n  \"projectKey\": \"OCD\",\n  \"relatesTo\": \"GRUP-2\",\n  \"initialStatus\": \"Validación\",\n  \"labels\": [\n    \"lanzalo\"\n  ]\n}"
         }
       }
     },
@@ -261,7 +261,7 @@
         "url": "{{baseUrl}}/api/tickets/OCD-3/comments",
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"body\": \"Pase: checklist para pasar a Congelamiento\\n✓ Evidencias OK\"\n}"
+          "raw": "{\n  \"body\": \"Lanzalo: checklist para pasar a Congelamiento\\n✓ Evidencias OK\"\n}"
         }
       }
     },
